@@ -67,7 +67,10 @@ const background = typeof argv.background === 'string' && argv.background.length
     ? argv.background
     : null;
 
-const canvas = new ChartJSNodeCanvas({
+// chartjs-node-canvas uses different native backends for raster vs vector
+// output, so the canvas has to be constructed with the matching `type` for
+// SVG. Raster (PNG/JPEG) uses the default backend.
+const canvasOpts = {
     width,
     height,
     backgroundColour: background,
@@ -77,7 +80,13 @@ const canvas = new ChartJSNodeCanvas({
         // and can interfere with synchronous image export.
         ChartJS.defaults.animation = false;
     },
-});
+};
+
+if (format === 'svg') {
+    canvasOpts.type = 'svg';
+}
+
+const canvas = new ChartJSNodeCanvas(canvasOpts);
 
 // chart.js server-side rendering has no DOM; disable responsiveness so the
 // requested width/height are honoured exactly.
