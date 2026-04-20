@@ -1,0 +1,92 @@
+name: CI
+
+on:
+    push:
+        branches: [ "main" ]
+    pull_request:
+
+jobs:
+    # ── PHP tests ─────────────────────────────────────────────────────────────
+    php-tests:
+        name: PHP ${{ matrix.php }} tests
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: [ "8.2", "8.3", "8.4" ]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP ${{ matrix.php }}
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: Run PHPUnit
+              run: vendor/bin/phpunit
+
+    # ── Renderer build (Windows x64 exe) ──────────────────────────────────────
+    build-renderer:
+        name: Build renderer (Windows x64)
+        runs-on: windows-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Node 18 matches the pkg target and has pre-built canvas binaries,
+            # so no GTK / native compilation is required.
+            - name: Set up Node 18
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+                  cache: "npm"
+                  cache-dependency-path: renderer/package-lock.json
+
+            - name: Install renderer dependencies
+              working-directory: renderer
+              # --legacy-peer-deps: chartjs-node-canvas 4.x declares a Chart.js v3
+              # peer dep; we use Chart.js v4 which is runtime-compatible.
+              run: npm install --legacy-peer-deps
+
+            - name: Build Windows executable
+              working-directory: renderer
+              run: npm run build
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: chartjs-renderer-win-x64
+                  path: bin/chartjs-renderer.exe
+                  if-no-files-found: error
+
+    # ── Integration smoke-test (optional, runs after both jobs above) ──────────
+    smoke-test:
+        name: Smoke test (PHP + renderer binary)
+        needs: [ php-tests, build-renderer ]
+        runs-on: windows-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.3"
+                  coverage: none
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: Download renderer binary
+              uses: actions/download-artifact@v4
+              with:
+                  name: chartjs-renderer-win-x64
+                  path: bin
+
+            - name: Run PHPUnit (with real binary present)
+              run: vendor/bin/phpunit
