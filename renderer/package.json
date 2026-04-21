@@ -1,0 +1,31 @@
+{
+    "name": "chartjs-renderer",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Command-line tool that renders a Chart.js configuration to a PNG/JPEG/SVG file. Packaged into a standalone Windows executable used by the dvrtech/laravel-chartjs PHP package.",
+    "bin": {
+        "chartjs-renderer": "./index.js"
+    },
+    "main": "./index.js",
+    "scripts": {
+        "start": "node index.js",
+        "build": "pkg . --targets node18-win-x64 --output ../bin/chartjs-renderer.exe --compress GZip"
+    },
+    "dependencies": {
+        "chart.js": "^3.9.1",
+        "chartjs-node-canvas": "^4.1.6",
+        "minimist": "^1.2.8"
+    },
+    "devDependencies": {
+        "@yao-pkg/pkg": "^5.11.5"
+    },
+    "pkg": {
+        "assets": [
+            "node_modules/canvas/build/Release/**/*"
+        ],
+        "targets": [
+            "node18-win-x64"
+        ],
+        "outputPath": "../bin"
+    }
+}
