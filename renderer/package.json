@@ -12,8 +12,8 @@
         "build": "pkg . --targets node18-win-x64 --output ../bin/chartjs-renderer.exe --compress GZip"
     },
     "dependencies": {
-        "chart.js": "^3.9.1",
-        "chartjs-node-canvas": "^4.1.6",
+        "chart.js": "^4.4.0",
+        "chartjs-node-canvas": "^5.0.0",
         "minimist": "^1.2.8"
     },
     "devDependencies": {
