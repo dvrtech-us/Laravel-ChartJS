@@ -32,14 +32,20 @@ class ChartJsRenderer
         $dpr    = (float) ($options['devicePixelRatio'] ?? $this->config('device_pixel_ratio', 2));
         $bg     = $options['background'] ?? $this->config('background');
         $timeout = (int) ($options['timeout'] ?? $this->config('timeout', 30));
+        $stripTitle = (bool) ($options['strip_title'] ?? $options['stripTitle'] ?? $this->config('strip_title', false));
 
         $binary = $this->resolveBinary();
         $tempDir = $this->resolveTempDir();
+        $processEnv = $this->buildProcessEnv($tempDir);
 
         $inputPath  = $this->makeTempFile($tempDir, 'chartjs-cfg-', '.json');
         $outputPath = $this->makeTempFile($tempDir, 'chartjs-img-', '.' . $format);
 
         try {
+            if ($stripTitle) {
+                $config = $this->stripTitle($config);
+            }
+
             $json = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             if ($json === false) {
                 throw new ChartRenderException('Failed to encode Chart.js config as JSON: ' . json_last_error_msg());
@@ -66,7 +72,7 @@ class ChartJsRenderer
                 $command[] = $bg;
             }
 
-            $process = new Process($command);
+            $process = new Process($command, null, $processEnv);
             $process->setTimeout($timeout > 0 ? $timeout : null);
 
             try {
@@ -150,6 +156,73 @@ class ChartJsRenderer
         }
 
         return $dir;
+    }
+
+    /**
+     * Build a safe child-process environment for pkg-bundled renderer binaries.
+     *
+     * On some Windows service accounts, HOME/USERPROFILE resolve under
+     * C:\Windows\system32\config and pkg fails while creating cache paths there.
+     * We force cache/temp/home variables into writable locations under temp_path.
+     *
+     * @return array<string, string>
+     */
+    private function buildProcessEnv(string $tempDir): array
+    {
+        $safeHome = $this->ensureDirectoryExists(
+            $tempDir . DIRECTORY_SEPARATOR . 'chartjs-home',
+            'chartjs home directory',
+        );
+
+        $pkgCachePath = $this->config('pkg_cache_path');
+        if (! is_string($pkgCachePath) || $pkgCachePath === '') {
+            $pkgCachePath = $safeHome . DIRECTORY_SEPARATOR . '.pkg-cache';
+        }
+
+        $pkgCachePath = $this->ensureDirectoryExists($pkgCachePath, 'pkg cache directory');
+
+        return [
+            'PKG_CACHE_PATH' => $pkgCachePath,
+            'TEMP' => $tempDir,
+            'TMP' => $tempDir,
+            'TMPDIR' => $tempDir,
+            'HOME' => $safeHome,
+            'USERPROFILE' => $safeHome,
+            'LOCALAPPDATA' => $safeHome,
+            'APPDATA' => $safeHome,
+        ];
+    }
+
+    private function ensureDirectoryExists(string $path, string $label): string
+    {
+        if (! is_dir($path) && ! @mkdir($path, 0777, true) && ! is_dir($path)) {
+            throw new ChartRenderException("Unable to create {$label}: {$path}");
+        }
+
+        return $path;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>
+     */
+    private function stripTitle(array $config): array
+    {
+        if (! isset($config['options']) || ! is_array($config['options'])) {
+            $config['options'] = [];
+        }
+
+        if (! isset($config['options']['plugins']) || ! is_array($config['options']['plugins'])) {
+            $config['options']['plugins'] = [];
+        }
+
+        if (! isset($config['options']['plugins']['title']) || ! is_array($config['options']['plugins']['title'])) {
+            $config['options']['plugins']['title'] = [];
+        }
+
+        $config['options']['plugins']['title']['display'] = false;
+
+        return $config;
     }
 
     private function makeTempFile(string $dir, string $prefix, string $suffix): string

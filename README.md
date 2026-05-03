@@ -59,6 +59,7 @@ $chart = ChartJs::render([
     'format' => 'png',   // png | jpeg | svg
     'width'  => 800,
     'height' => 400,
+    'strip_title' => false, // force options.plugins.title.display=false when true
 ]);
 
 $chart->bytes();     // raw image bytes
@@ -66,6 +67,9 @@ $chart->base64();    // base64-encoded bytes
 $chart->dataUri();   // data:image/png;base64,...
 $chart->saveTo(storage_path('app/chart.png'));
 ```
+
+`chartjs-plugin-datalabels` is bundled and pre-registered in the renderer, so
+you can use `options.plugins.datalabels` in your Chart.js config.
 
 ## Embedding in a PDF
 
@@ -116,12 +120,17 @@ $pdf->Output('sales.pdf', 'D');
 |----------------------|-----------------------|----------------------------------|
 | `binary_path`        | `CHARTJS_BINARY_PATH` | `bin/chartjs-renderer.exe`       |
 | `temp_path`          | `CHARTJS_TEMP_PATH`   | system temp dir                  |
+| `pkg_cache_path`     | `CHARTJS_PKG_CACHE_PATH` | `<temp_path>/chartjs-home/.pkg-cache` |
 | `default_format`     | `CHARTJS_FORMAT`      | `png`                            |
 | `default_width`      | `CHARTJS_WIDTH`       | `800`                            |
 | `default_height`     | `CHARTJS_HEIGHT`      | `600`                            |
 | `device_pixel_ratio` | `CHARTJS_DPR`         | `2`                              |
 | `background`         | `CHARTJS_BACKGROUND`  | `null` (transparent for PNG/SVG) |
+| `strip_title`        | `CHARTJS_STRIP_TITLE` | `false`                          |
 | `timeout`            | `CHARTJS_TIMEOUT`     | `30` seconds                     |
+
+On Windows service accounts, set `CHARTJS_TEMP_PATH` (and optionally
+`CHARTJS_PKG_CACHE_PATH`) to a writable folder to avoid pkg extraction errors.
 
 ## Errors
 

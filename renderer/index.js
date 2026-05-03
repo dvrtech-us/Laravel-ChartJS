@@ -62,6 +62,7 @@ try {
 }
 
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const chartDataLabels = require('chartjs-plugin-datalabels');
 
 const background = typeof argv.background === 'string' && argv.background.length > 0
     ? argv.background
@@ -79,6 +80,9 @@ const canvasOpts = {
         // Disable animations — they are meaningless for a single-frame render
         // and can interfere with synchronous image export.
         ChartJS.defaults.animation = false;
+        // Register built-in extra plugins so config options like
+        // options.plugins.datalabels are honored in server-side renders.
+        ChartJS.register(chartDataLabels);
     },
 };
 

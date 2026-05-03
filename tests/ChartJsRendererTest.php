@@ -121,4 +121,66 @@ class ChartJsRendererTest extends TestCase
 
         @unlink($path);
     }
+
+    public function test_sets_pkg_and_temp_environment_for_renderer_process(): void
+    {
+        $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'chartjs-test-' . uniqid('', true);
+        $this->app['config']->set('chartjs.temp_path', $tempPath);
+
+        $renderer = $this->app->make(ChartJsRenderer::class);
+
+        $chart = $renderer->render([
+            'type' => 'bar',
+            '__require_env' => 'PKG_CACHE_PATH',
+            '__require_env_dir' => 'PKG_CACHE_PATH',
+        ]);
+
+        $this->assertInstanceOf(RenderedChart::class, $chart);
+        $this->assertDirectoryExists($tempPath);
+        $this->assertDirectoryExists($tempPath . DIRECTORY_SEPARATOR . 'chartjs-home');
+        $this->assertDirectoryExists($tempPath . DIRECTORY_SEPARATOR . 'chartjs-home' . DIRECTORY_SEPARATOR . '.pkg-cache');
+    }
+
+    public function test_can_strip_chart_title_using_render_option(): void
+    {
+        $renderer = $this->app->make(ChartJsRenderer::class);
+
+        $chart = $renderer->render([
+            'type' => 'bar',
+            'options' => [
+                'plugins' => [
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Keep me out of the rendered image',
+                    ],
+                ],
+            ],
+            '__assert_title_hidden' => true,
+        ], [
+            'strip_title' => true,
+        ]);
+
+        $this->assertInstanceOf(RenderedChart::class, $chart);
+    }
+
+    public function test_can_strip_chart_title_using_config_default(): void
+    {
+        $this->app['config']->set('chartjs.strip_title', true);
+        $renderer = $this->app->make(ChartJsRenderer::class);
+
+        $chart = $renderer->render([
+            'type' => 'bar',
+            'options' => [
+                'plugins' => [
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Config-level title',
+                    ],
+                ],
+            ],
+            '__assert_title_hidden' => true,
+        ]);
+
+        $this->assertInstanceOf(RenderedChart::class, $chart);
+    }
 }

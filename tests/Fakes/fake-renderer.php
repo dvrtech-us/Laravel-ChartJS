@@ -61,6 +61,30 @@ if (isset($config['__timeout_ms'])) {
     usleep((int) $config['__timeout_ms'] * 1000);
 }
 
+if (isset($config['__require_env']) && is_string($config['__require_env'])) {
+    $value = getenv($config['__require_env']);
+    if ($value === false || $value === '') {
+        fwrite(STDERR, "Missing required env var: {$config['__require_env']}\n");
+        exit(6);
+    }
+}
+
+if (isset($config['__require_env_dir']) && is_string($config['__require_env_dir'])) {
+    $value = getenv($config['__require_env_dir']);
+    if ($value === false || $value === '' || ! is_dir($value)) {
+        fwrite(STDERR, "Missing required env dir: {$config['__require_env_dir']}\n");
+        exit(7);
+    }
+}
+
+if (! empty($config['__assert_title_hidden'])) {
+    $titleIsVisible = ($config['options']['plugins']['title']['display'] ?? false) !== false;
+    if ($titleIsVisible) {
+        fwrite(STDERR, "Expected chart title display to be false\n");
+        exit(8);
+    }
+}
+
 $format = strtolower((string) $opts['format']);
 
 // Minimal 1x1 payloads per format; enough for the PHP side to treat as

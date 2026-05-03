@@ -33,6 +33,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | pkg cache path
+    |--------------------------------------------------------------------------
+    |
+    | Path used by pkg-bundled renderer binaries to extract native modules.
+    | If null, the renderer uses "<temp_path>/chartjs-home/.pkg-cache".
+    |
+    */
+
+    'pkg_cache_path' => env('CHARTJS_PKG_CACHE_PATH', null),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default render options
     |--------------------------------------------------------------------------
     */
@@ -42,6 +54,7 @@ return [
     'default_height'     => (int) env('CHARTJS_HEIGHT', 600),
     'device_pixel_ratio' => (float) env('CHARTJS_DPR', 2),
     'background'         => env('CHARTJS_BACKGROUND', null),
+    'strip_title'        => env('CHARTJS_STRIP_TITLE', false),
 
     /*
     |--------------------------------------------------------------------------

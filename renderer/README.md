@@ -22,6 +22,9 @@ chartjs-renderer --input  <path-to-config.json>
 - `--output` is the path to write the rendered image to.
 - Exit code `0` = success; any other value = failure with a message on stderr.
 
+The bundled renderer pre-registers `chartjs-plugin-datalabels`, so
+`options.plugins.datalabels` configuration is supported out of the box.
+
 ## Build
 
 ```bash
